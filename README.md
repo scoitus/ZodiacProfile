@@ -1,16 +1,39 @@
-# React + Vite
+# Astralis
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small React app that turns a date of birth into a reading: sun sign, Chinese zodiac, birthstone, birth flower and tarot birth card.
 
-Currently, two official plugins are available:
+## What it shows
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Sun sign** with its constellation, element, quality, ruling planet and traits. Dates within a day of a sign boundary get a cusp note, because the exact changeover shifts from year to year.
+- **Chinese zodiac** animal, element and yin/yang polarity, keyed to Lunar New Year rather than 1 January.
+- **Birthstone and birth flower** for the month, with their traditional meanings.
+- **Tarot birth card** from the life path number, including master numbers 11, 22 and 33.
 
-## React Compiler
+## Running it
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev      # local dev server
+npm test         # unit tests for the date logic
+npm run lint
+npm run build    # production build in dist/
+```
 
-## Expanding the ESLint configuration
+## Deploying
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Pushing to `main` builds the site and publishes it to GitHub Pages through `.github/workflows/deploy.yml`. Pages must be enabled once under Settings → Pages with the source set to "GitHub Actions".
+
+## Layout
+
+| Path | Contents |
+| --- | --- |
+| `src/utils/zodiac.js` | All date logic and validation; `calculateProfile('YYYY-MM-DD')` returns the reading |
+| `src/data/` | Reference data: signs, animals, stones, flowers, tarot, constellation figures |
+| `src/components/` | Birth form, reading view, sky and SVG artwork |
+| `src/index.css` | Theme tokens (Tailwind v4 `@theme`) and custom styles |
+
+## Accuracy notes
+
+- Supported years are 1900 to 2100.
+- Lunar New Year uses a verified table for 1900–2040. Later years use the browser's built-in Chinese calendar, which can differ from the official date by one day in rare years.
+- Sun sign boundaries use the conventional fixed dates.
