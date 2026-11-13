@@ -1,91 +1,75 @@
-import React, { useState } from 'react';
-import DatePicker from './components/DatePicker';
-import ProfileCard from './components/ProfileCard';
-import { calculateProfile } from './utils/zodiac';
+import { useEffect, useRef, useState } from 'react';
+import BirthForm from './components/BirthForm';
+import Reading from './components/Reading';
+import { Sky, ZodiacWheel } from './components/Sky';
+import { calculateProfile, validateDate } from './utils/zodiac';
 
-function App() {
-  const [date, setDate] = useState('');
-  const [profile, setProfile] = useState(null);
-  const [viewState, setViewState] = useState('input'); // 'input' | 'result'
+const EMPTY = { month: '', day: '', year: '' };
 
-  const handleReveal = () => {
-    if (date) {
-      const data = calculateProfile(date);
-      setProfile(data);
-      setViewState('result');
-    }
-  };
+export default function App() {
+    const [fields, setFields] = useState(EMPTY);
+    const [error, setError] = useState('');
+    const [profile, setProfile] = useState(null);
+    const monthRef = useRef(null);
+    const headingRef = useRef(null);
+    const returning = useRef(false);
 
-  const handleReset = () => {
-    setViewState('input');
-    // Optional: keep date or clear it. Let's keep it for convenience, or clear if user wants "Another".
-    // Request implies stepping back. Let's not clear date, just view.
-    // But standard UX for "Check Another" usually implies "Reset". Let's clear profile but keep date input for editing? 
-    // User said "flips back to input state". 
-    // Let's clear profile after a delay to smooth transition if we wanted, but immediate is fine for React state.
-    setProfile(null);
-    setDate('');
-  };
+    // Move focus with the view so keyboard and screen-reader users follow along.
+    useEffect(() => {
+        if (profile) {
+            window.scrollTo(0, 0);
+            headingRef.current?.focus({ preventScroll: true });
+        } else if (returning.current) {
+            window.scrollTo(0, 0);
+            monthRef.current?.focus({ preventScroll: true });
+        }
+    }, [profile]);
 
-  // Generate stars for background
-  const stars = Array.from({ length: 50 }).map((_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    size: `${Math.random() * 3 + 1}px`,
-    delay: `${Math.random() * 5}s`,
-    duration: `${Math.random() * 3 + 2}s`
-  }));
+    const handleChange = (next) => {
+        setFields(next);
+        if (error) setError('');
+    };
 
-  return (
-    <div className="min-h-screen w-full bg-[#090b1e] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1b2735] via-[#090a0f] to-[#000000] flex items-center justify-center p-4 font-sans text-gray-100 overflow-hidden relative">
+    const handleSubmit = () => {
+        const [year, month, day] = [fields.year, fields.month, fields.day].map((v) => (v === '' ? NaN : Number(v)));
+        const problem = validateDate(year, month, day);
+        if (problem) {
+            setError(problem);
+            return;
+        }
+        const pad = (n) => String(n).padStart(2, '0');
+        setProfile(calculateProfile(`${year}-${pad(month)}-${pad(day)}`));
+    };
 
-      {/* Star Background */}
-      {stars.map(star => (
-        <div
-          key={star.id}
-          className="star"
-          style={{
-            left: star.left,
-            top: star.top,
-            width: star.size,
-            height: star.size,
-            animationDelay: star.delay,
-            animationDuration: star.duration
-          }}
-        />
-      ))}
+    const handleReset = () => {
+        returning.current = true;
+        setProfile(null);
+    };
 
-      <div className="w-full max-w-4xl relative z-10 transition-all duration-700 ease-in-out">
-        <header className={`mb-12 text-center transition-all duration-700 ${viewState === 'result' ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100'}`}>
-          <h1 className="text-5xl md:text-7xl font-serif italic text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-white to-purple-200 mb-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] animate-pulse">
-            Astralis
-          </h1>
-          <p className="text-purple-200/60 text-sm tracking-[0.3em] font-light uppercase">
-            Unlock the Secrets of your Birth
-          </p>
-        </header>
-
-        <main className="w-full relative">
-          <div className={`transition-all duration-700 transform absolute w-full ${viewState === 'input' ? 'opacity-100 translate-y-0 relative z-10' : 'opacity-0 -translate-y-10 pointer-events-none absolute'}`}>
-            <DatePicker
-              value={date}
-              onChange={(d) => setDate(d)}
-              onReveal={handleReveal}
-            />
-          </div>
-
-          <div className={`transition-all duration-1000 transform ${viewState === 'result' ? 'opacity-100 translate-y-0 relative z-10' : 'opacity-0 translate-y-20 pointer-events-none absolute w-full'}`}>
-            {profile && <ProfileCard data={profile} onReset={handleReset} />}
-          </div>
-        </main>
-
-        <footer className={`mt-20 text-center text-white/10 text-xs tracking-widest font-serif transition-opacity duration-700 ${viewState === 'result' ? 'opacity-0' : 'opacity-100'}`}>
-          ✨ {new Date().getFullYear()} ASTRALIS • PROSPER THROUGH STARS ✨
-        </footer>
-      </div>
-    </div>
-  );
+    return (
+        <>
+            <Sky />
+            <div className="relative z-10 flex min-h-dvh flex-col px-4 py-10 sm:px-6 sm:py-14">
+                {profile ? (
+                    <main key="reading" className="my-auto">
+                        <Reading data={profile} onReset={handleReset} headingRef={headingRef} />
+                    </main>
+                ) : (
+                    <main key="form" className="relative my-auto">
+                        <ZodiacWheel className="pointer-events-none absolute left-1/2 top-1/2 -z-10 w-[min(165vw,56rem)] max-w-none -translate-x-1/2 -translate-y-1/2 opacity-50 [mask-image:radial-gradient(closest-side,transparent_38%,#000_78%)]" />
+                        <header className="reveal mb-10 text-center">
+                            <p className="eyebrow mb-5">A reading written in your birth date</p>
+                            <h1 className="gilded font-display text-7xl font-medium italic leading-none sm:text-8xl">Astralis</h1>
+                            <p className="mx-auto mt-6 max-w-md font-display text-[1.375rem] leading-snug text-ivory/85">
+                                Your sun sign, Chinese zodiac, birthstone, birth flower and tarot birth card, from a single date.
+                            </p>
+                        </header>
+                        <div className="reveal" style={{ '--d': '0.15s' }}>
+                            <BirthForm ref={monthRef} value={fields} onChange={handleChange} onSubmit={handleSubmit} error={error} />
+                        </div>
+                    </main>
+                )}
+            </div>
+        </>
+    );
 }
-
-export default App;
