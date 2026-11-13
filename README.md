@@ -19,6 +19,10 @@ npm run lint
 npm run build    # production build in dist/
 ```
 
+## Deploying
+
+Pushing to `main` builds the site and publishes it to GitHub Pages through `.github/workflows/deploy.yml`. Pages must be enabled once under Settings → Pages with the source set to "GitHub Actions".
+
 ## Layout
 
 | Path | Contents |
